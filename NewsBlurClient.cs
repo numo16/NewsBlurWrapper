@@ -282,12 +282,19 @@ namespace Ayls.NewsBlur
             return result;
         }
 
-        public async Task<AddFeedResult> AddFeed(string link)
+        public async Task<AddFeedResult> AddFeed(string link, string folder)
         {
-            var content = new FormUrlEncodedContent(new Collection<KeyValuePair<string, string>>()
+            var values = new Collection<KeyValuePair<string, string>>()
                 {
                     new KeyValuePair<string, string>("url", link), 
-                });
+                };
+
+            if (!string.IsNullOrEmpty(folder))
+            {
+                values.Add(new KeyValuePair<string, string>("folder", folder));
+            }
+
+            var content = new FormUrlEncodedContent(values);
 
             var request = new HttpRequestMessage(HttpMethod.Post, _baseUrl + "/reader/add_url")
             {
@@ -301,6 +308,7 @@ namespace Ayls.NewsBlur
                 var converter = new JsonSerializer();
                 var addFeedResponse = converter.Deserialize<AddFeedResponse>(new JsonTextReader(new StreamReader(await response.Content.ReadAsStreamAsync())));
                 result.Feed = addFeedResponse.Feed;
+                result.Feed.Group = folder;
                 if (!result.IsSuccess)
                 {
                     result.Error = addFeedResponse.Error;
