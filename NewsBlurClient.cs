@@ -1,54 +1,34 @@
-﻿using System;
+﻿using Ayls.NewsBlur.Responses;
+using Ayls.NewsBlur.Results;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace Ayls.NewsBlur
 {
-    public class NewsBlurClient
+    public class NewsBlurClient : NewsBlurClientBase
     {
-        private string _baseUrl = "https://www.newsblur.com";
-        private HttpClient _client;
-        private string _username;
-        private string _password;
-
-        protected HttpClient Client
+        protected override string BaseUrl
         {
             get
             {
-                if (_client == null)
-                {
-                    _client = InitializeClient();
-                }
-
-                return _client;
+                return "https://www.newsblur.com";
             }
         }
 
-        protected HttpClient InitializeClient()
-        {
-            var cookieJar = new CookieContainer();
-            var handler = new HttpClientHandler
-            {
-                CookieContainer = cookieJar,
-                UseCookies = true,
-                UseDefaultCredentials = false
-            };
+        private string _username;
+        private string _password;
 
-            return new HttpClient(handler)
-                {
-                    BaseAddress = new Uri(_baseUrl)
-                };
-        }
-
-        public async Task<bool> Login(string username, string password)
+        public async Task<LoginResult> Login(string username, string password)
         {
+            LoginResult result; 
+
             _username = username;
             _password = password;
 
@@ -58,32 +38,36 @@ namespace Ayls.NewsBlur
                     new KeyValuePair<string, string>("password", _password)
                 });
 
-            var request = new HttpRequestMessage(HttpMethod.Post, _baseUrl + "/api/login")
+            var request = new HttpRequestMessage(HttpMethod.Post, BaseUrl + "/api/login")
                 {
                     Content = content
                 };
-            var response = await Client.SendAsync(request);
 
-            if (response.IsSuccessStatusCode)
+            try
             {
-                var converter = new JsonSerializer();
-                var loginResponse =
-                    converter.Deserialize<LoginResponse>(
-                        new JsonTextReader(new StreamReader(await response.Content.ReadAsStreamAsync())));
-
-                return loginResponse.IsAuthenticated;
+                var response = await Client.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    var loginResponse = JsonConvert.DeserializeObject<LoginResponse>(await response.Content.ReadAsStringAsync());
+                    result = new LoginResult(loginResponse.IsAuthenticated);
+                }
+                else
+                {
+                    result = new LoginResult(string.Format("Server returned {0}", response.StatusCode), ApiCallStatus.Failed);
+                }
             }
-            else
+            catch (Exception e)
             {
-                throw new HttpRequestException(string.Format("Server returned {0}", response.StatusCode));
+                result = HandleException(e, (m, s) => new LoginResult(m, s));
             }
 
-
-            return false;
+            return result;
         }
 
         public async Task<SignupResult> Signup(string username, string password)
         {
+            SignupResult result;
+
             _username = username;
             _password = password;
 
@@ -93,92 +77,110 @@ namespace Ayls.NewsBlur
                     new KeyValuePair<string, string>("password", _password)
                 });
 
-            var request = new HttpRequestMessage(HttpMethod.Post, _baseUrl + "/api/signup")
+            var request = new HttpRequestMessage(HttpMethod.Post, BaseUrl + "/api/signup")
             {
                 Content = content
             };
-            var response = await Client.SendAsync(request);
-            var result = new SignupResult() { Errors = new List<string>() };
-            if (response.IsSuccessStatusCode)
-            {
-                var converter = new JsonSerializer();
-                var signupResponse = converter.Deserialize<SignupResponse>(new JsonTextReader(new StreamReader(await response.Content.ReadAsStreamAsync())));
-                result.IsAuthenticated = signupResponse.IsAuthenticated;
-                if (!result.IsAuthenticated)
-                {
-                    foreach (var errorToken in signupResponse.Errors)
-                    {
-                        result.Errors.AddRange(JsonConvert.DeserializeObject<string[]>(errorToken.Value.ToString()));
-                    }
-                }
-            }
-            else
-            {
-                throw new HttpRequestException(string.Format("Server returned {0}", response.StatusCode));
-            }
 
-            return result;
-        }
-
-        public async Task<bool> Logout()
-        {
-            var request = new HttpRequestMessage(HttpMethod.Post, _baseUrl + "/api/logout");
-
-            var response = await Client.SendAsync(request);
-
-            return response.IsSuccessStatusCode;
-        }
-
-        private async Task<T> ApiMethodRunner<T>(Func<Task<T>> task)
-        {
-            string errorMessage = null;
             try
             {
-                return await task.Invoke();
-            }
-            catch (HttpRequestException e)
-            {
-                errorMessage = e.Message;
-                if (!e.Message.Contains("403"))
+                var response = await Client.SendAsync(request);
+                if (response.IsSuccessStatusCode)
                 {
-                    throw;
+                    var signupResponse = JsonConvert.DeserializeObject<SignupResponse>(await response.Content.ReadAsStringAsync());
+                    result = new SignupResult(signupResponse.IsAuthenticated);
+                    if (!signupResponse.IsAuthenticated)
+                    {
+                        if (signupResponse.Errors is JObject)
+                        {
+                            foreach (var errorToken in signupResponse.Errors)
+                            {
+                                result.Errors.AddRange(JsonConvert.DeserializeObject<string[]>(errorToken.ToString()));
+                            }                      
+                        }
+                        else if (signupResponse.Errors != null)
+                        {
+                            result.Errors.Add(JsonConvert.DeserializeObject<string>(signupResponse.Errors.ToString()));
+                        }
+                    }
+                }
+                else
+                {
+                    result = new SignupResult(string.Format("Server returned {0}", response.StatusCode), ApiCallStatus.Failed);
                 }
             }
-
-            if (await Login(_username, _password))
+            catch (Exception e)
             {
-                return await task.Invoke();
-            }
-
-            throw new HttpRequestException(errorMessage);
-        }
-
-        public async Task<IEnumerable<FeedResult>> GetFeeds()
-        {
-            var result = new Collection<FeedResult>();
-
-            var response = await ApiMethodRunner<Stream>(async () => await Client.GetStreamAsync(_baseUrl + "/reader/feeds"));
-
-            var converter = new JsonSerializer();
-            var feedList = converter.Deserialize<FeedsResponse>(new JsonTextReader(new StreamReader(response)));
-            foreach (var feedToken in feedList.Feeds)
-            {
-                var feedResult = JsonConvert.DeserializeObject<FeedResult>(feedToken.Value.ToString());
-                if (feedResult.Active)
-                {
-                    result.Add(feedResult);
-                }
-            }
-
-            foreach (var groupToken in feedList.Groups)
-            {
-                ProcessGroups(result, groupToken, 0, null);
+                result = HandleException(e, (m, s) => new SignupResult(m, s));
             }
 
             return result;
         }
 
-        private void ProcessGroups(IEnumerable<FeedResult> feeds, JToken groupToken, int level, string currentGroupName)
+        public async Task<LogoutResult> Logout()
+        {
+            LogoutResult result;
+
+            var request = new HttpRequestMessage(HttpMethod.Post, BaseUrl + "/api/logout");
+
+            try
+            {
+                var response = await Client.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    result = new LogoutResult();
+                }
+                else
+                {
+                    result = new LogoutResult(string.Format("Server returned {0}", response.StatusCode), ApiCallStatus.Failed);
+                }
+            }
+            catch (Exception e)
+            {
+                result = HandleException(e, (m, s) => new LogoutResult(m, s));
+            }
+
+            return result;
+        }
+
+        public async Task<GetGroupedFeedsResult> GetGroupedFeeds()
+        {
+            GetGroupedFeedsResult result;
+
+            try
+            {
+                var response = await ApiMethodRunner<Stream>(async () => await Client.GetStreamAsync(BaseUrl + "/reader/feeds"),
+                    async () => await Login(_username, _password));
+
+                var converter = new JsonSerializer();
+                var feedResponse = converter.Deserialize<FeedsResponse>(new JsonTextReader(new StreamReader(response)));
+
+                var feedSummaryResults = new Collection<FeedSummaryResult>();
+                foreach (var feedToken in feedResponse.Feeds)
+                {
+                    var feedSummaryResult = JsonConvert.DeserializeObject<FeedSummaryResult>(feedToken.Value.ToString());
+                    if (feedSummaryResult.Active)
+                    {
+                        feedSummaryResults.Add(feedSummaryResult);
+                    }
+                }
+
+                foreach (var groupToken in feedResponse.Groups)
+                {
+                    ProcessGroups(feedSummaryResults, groupToken, 0, null);
+                }
+
+                result = new GetGroupedFeedsResult(feedSummaryResults);
+            }
+            catch (Exception e)
+            {
+                result = HandleException(e, (m, s) => new GetGroupedFeedsResult(m, s));
+            }
+
+            return result;
+        }
+
+        private void ProcessGroups(IEnumerable<FeedSummaryResult> feeds, JToken groupToken, int level, string currentGroupName)
         {
             if (groupToken is JObject)
             {
@@ -206,77 +208,30 @@ namespace Ayls.NewsBlur
             }
         }
 
-        public async Task<IEnumerable<FeedUnreadCountResult>> GetFeedUnreadCount()
+        public async Task<GetFeedsUnreadCountResult> GetFeedsUnreadCount()
         {
-            var result = new Collection<FeedUnreadCountResult>();
+            GetFeedsUnreadCountResult result;
 
-            var response = await ApiMethodRunner<Stream>(async () => await Client.GetStreamAsync(_baseUrl + "/reader/refresh_feeds"));
-
-            var converter = new JsonSerializer();
-            var feedsUnreadCountResponse = converter.Deserialize<FeedsUnreadCountResponse>(new JsonTextReader(new StreamReader(response)));
-            foreach (var feedToken in feedsUnreadCountResponse.Feeds)
+            try
             {
-                var feedUnreadCount = JsonConvert.DeserializeObject<FeedUnreadCountResult>(feedToken.Value.ToString());
-                result.Add(feedUnreadCount);
-            }
+                var response = await ApiMethodRunner<Stream>(async () => await Client.GetStreamAsync(BaseUrl + "/reader/refresh_feeds"),
+                    async () => await Login(_username, _password));
 
-            return result;
-        }
-
-        public async Task<IEnumerable<StorySummaryResult>> GetStories(string feedId, int page)
-        {
-            var response = await ApiMethodRunner<Stream>(async () => await Client.GetStreamAsync(_baseUrl + "/reader/feed/" + feedId + "?include_story_content=false&page=" + page));
-
-            var converter = new JsonSerializer();
-            var storiesResponse = converter.Deserialize<StoriesResponse>(new JsonTextReader(new StreamReader(response)));
-          
-            return storiesResponse.Stories;
-        }
-
-        public async Task<bool> MarkStoryAsRead(string feedId, string storyId)
-        {
-            var content = new FormUrlEncodedContent(new Collection<KeyValuePair<string, string>>()
-                {
-                    new KeyValuePair<string, string>("story_id", storyId), 
-                    new KeyValuePair<string, string>("feed_id", feedId)
-                });
-
-            var request = new HttpRequestMessage(HttpMethod.Post, _baseUrl + "/reader/mark_story_as_read")
-            {
-                Content = content
-            };
-            var response = await ApiMethodRunner<HttpResponseMessage>(async () => await Client.SendAsync(request));
-
-            return response.IsSuccessStatusCode;
-        }
-
-        public async Task<MarkStoryAsUnreadResult> MarkStoryAsUnread(string feedId, string storyId)
-        {
-            var content = new FormUrlEncodedContent(new Collection<KeyValuePair<string, string>>()
-                {
-                    new KeyValuePair<string, string>("story_id", storyId), 
-                    new KeyValuePair<string, string>("feed_id", feedId)
-                });
-
-            var request = new HttpRequestMessage(HttpMethod.Post, _baseUrl + "/reader/mark_story_as_unread")
-            {
-                Content = content
-            };
-            var response = await ApiMethodRunner<HttpResponseMessage>(async () => await Client.SendAsync(request));
-
-            var result = new MarkStoryAsUnreadResult();
-            if (response.IsSuccessStatusCode)
-            {
                 var converter = new JsonSerializer();
-                var addFeedResponse = converter.Deserialize<MarkStoryAsUnreadResponse>(new JsonTextReader(new StreamReader(await response.Content.ReadAsStreamAsync())));
-                if (!addFeedResponse.IsSuccess)
+                var feedsUnreadCountResponse = converter.Deserialize<FeedsUnreadCountResponse>(new JsonTextReader(new StreamReader(response)));
+
+                var feedUnreadCountSummaryResults = new Collection<FeedUnreadCountSummaryResult>();
+                foreach (var feedToken in feedsUnreadCountResponse.Feeds)
                 {
-                    result.Error = addFeedResponse.Error;
+                    var feedUnreadCountSummaryResult = JsonConvert.DeserializeObject<FeedUnreadCountSummaryResult>(feedToken.Value.ToString());
+                    feedUnreadCountSummaryResults.Add(feedUnreadCountSummaryResult);
                 }
+
+                result = new GetFeedsUnreadCountResult(feedUnreadCountSummaryResults);
             }
-            else
+            catch (Exception e)
             {
-                throw new HttpRequestException(string.Format("Server returned {0}", response.StatusCode));
+                result = HandleException(e, (m, s) => new GetFeedsUnreadCountResult(m, s));
             }
 
             return result;
@@ -284,6 +239,8 @@ namespace Ayls.NewsBlur
 
         public async Task<AddFeedResult> AddFeed(string link, string folder)
         {
+            AddFeedResult result;
+
             var values = new Collection<KeyValuePair<string, string>>()
                 {
                     new KeyValuePair<string, string>("url", link), 
@@ -296,27 +253,137 @@ namespace Ayls.NewsBlur
 
             var content = new FormUrlEncodedContent(values);
 
-            var request = new HttpRequestMessage(HttpMethod.Post, _baseUrl + "/reader/add_url")
+            var request = new HttpRequestMessage(HttpMethod.Post, BaseUrl + "/reader/add_url")
             {
                 Content = content
             };
-            var response = await ApiMethodRunner<HttpResponseMessage>(async () => await Client.SendAsync(request));
 
-            var result = new AddFeedResult();
-            if(response.IsSuccessStatusCode)
+            try
             {
-                var converter = new JsonSerializer();
-                var addFeedResponse = converter.Deserialize<AddFeedResponse>(new JsonTextReader(new StreamReader(await response.Content.ReadAsStreamAsync())));
-                result.Feed = addFeedResponse.Feed;
-                result.Feed.Group = folder;
-                if (!result.IsSuccess)
+                var response = await ApiMethodRunner<HttpResponseMessage>(async () => await Client.SendAsync(request),
+                    async () => await Login(_username, _password));
+
+                if (response.IsSuccessStatusCode)
                 {
-                    result.Error = addFeedResponse.Error;
+                    var addFeedResponse = JsonConvert.DeserializeObject<AddFeedResponse>(await response.Content.ReadAsStringAsync());
+                    result = new AddFeedResult(addFeedResponse.Feed, addFeedResponse.IsFeedAdded);
+                    result.Feed.Group = folder;
+                    if (!result.IsFeedAdded)
+                    {
+                        result.Errors.Add(addFeedResponse.Error);
+                    }
+                }
+                else
+                {
+                    result = new AddFeedResult(string.Format("Server returned {0}", response.StatusCode), ApiCallStatus.Failed);
                 }
             }
-            else
+            catch (Exception e)
             {
-                throw new HttpRequestException(string.Format("Server returned {0}", response.StatusCode));
+                result = HandleException(e, (m, s) => new AddFeedResult(m, s));
+            }
+
+            return result;
+        }
+
+        public async Task<GetStoriesResult> GetStories(string feedId, int page)
+        {
+            GetStoriesResult result;
+
+            try
+            {
+                var response = await ApiMethodRunner<Stream>(async () => await Client.GetStreamAsync(BaseUrl + "/reader/feed/" + feedId + "?include_story_content=false&page=" + page),
+                    async () => await Login(_username, _password));
+
+                var converter = new JsonSerializer();
+                var storiesResponse = converter.Deserialize<StoriesResponse>(new JsonTextReader(new StreamReader(response)));
+
+                result = new GetStoriesResult(storiesResponse.Stories);
+            }
+            catch (Exception e)
+            {
+                result = HandleException(e, (m, s) => new GetStoriesResult(m, s));
+            }
+          
+            return result;
+        }
+
+        public async Task<MarkStoryAsReadResult> MarkStoryAsRead(string feedId, string storyId)
+        {
+            MarkStoryAsReadResult result;
+
+            var content = new FormUrlEncodedContent(new Collection<KeyValuePair<string, string>>()
+                {
+                    new KeyValuePair<string, string>("story_id", storyId), 
+                    new KeyValuePair<string, string>("feed_id", feedId)
+                });
+
+            var request = new HttpRequestMessage(HttpMethod.Post, BaseUrl + "/reader/mark_story_as_read")
+            {
+                Content = content
+            };
+
+            try
+            {
+                var response = await ApiMethodRunner<HttpResponseMessage>(async () => await Client.SendAsync(request),
+                    async () => await Login(_username, _password));
+
+                if (response.IsSuccessStatusCode)
+                {
+                    result = new MarkStoryAsReadResult();
+                }
+                else
+                {
+                    result = new MarkStoryAsReadResult(string.Format("Server returned {0}", response.StatusCode), ApiCallStatus.Failed);
+                }
+            }
+            catch (Exception e)
+            {
+                result = HandleException(e, (m, s) => new MarkStoryAsReadResult(m, s));
+            }
+
+            return result;
+        }
+
+        public async Task<MarkStoryAsUnreadResult> MarkStoryAsUnread(string feedId, string storyId)
+        {
+            MarkStoryAsUnreadResult result;
+
+            var content = new FormUrlEncodedContent(new Collection<KeyValuePair<string, string>>()
+                {
+                    new KeyValuePair<string, string>("story_id", storyId), 
+                    new KeyValuePair<string, string>("feed_id", feedId)
+                });
+
+            var request = new HttpRequestMessage(HttpMethod.Post, BaseUrl + "/reader/mark_story_as_unread")
+            {
+                Content = content
+            };
+
+            try
+            {
+                var response = await ApiMethodRunner<HttpResponseMessage>(async () => await Client.SendAsync(request),
+                    async () => await Login(_username, _password));
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var converter = new JsonSerializer();
+                    var addFeedResponse = converter.Deserialize<MarkStoryAsUnreadResponse>(new JsonTextReader(new StreamReader(await response.Content.ReadAsStreamAsync())));
+
+                    result = new MarkStoryAsUnreadResult(addFeedResponse.IsMarkedAsUnread);
+                    if (!addFeedResponse.IsMarkedAsUnread)
+                    {
+                        result.Errors.Add(addFeedResponse.Error);
+                    }
+                }
+                else
+                {
+                    result = new MarkStoryAsUnreadResult(string.Format("Server returned {0}", response.StatusCode), ApiCallStatus.Failed);
+                }
+            }
+            catch (Exception e)
+            {
+                result = HandleException(e, (m, s) => new MarkStoryAsUnreadResult(m, s));
             }
 
             return result;

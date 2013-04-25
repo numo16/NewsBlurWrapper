@@ -33,21 +33,30 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="AddFeedResponse.cs" />
-    <Compile Include="AddFeedResult.cs" />
-    <Compile Include="FeedResult.cs" />
-    <Compile Include="FeedsResponse.cs" />
-    <Compile Include="FeedsUnreadCountResponse.cs" />
-    <Compile Include="FeedUnreadCountResult.cs" />
-    <Compile Include="LoginResponse.cs" />
-    <Compile Include="MarkStoryAsUnreadResponse.cs" />
-    <Compile Include="MarkStoryAsUnreadResult.cs" />
+    <Compile Include="Results\GetFeedsUnreadCountResult.cs" />
+    <Compile Include="Results\GetGroupedFeedsResult.cs" />
+    <Compile Include="Results\GetStoriesResult.cs" />
+    <Compile Include="Results\LoginResult.cs" />
+    <Compile Include="Results\LogoutResult.cs" />
+    <Compile Include="NewsBlurClientBase.cs" />
+    <Compile Include="Responses\AddFeedResponse.cs" />
+    <Compile Include="Results\AddFeedResult.cs" />
+    <Compile Include="Results\ApiCallResult.cs" />
+    <Compile Include="Results\ApiCallStatus.cs" />
+    <Compile Include="Results\FeedSummaryResult.cs" />
+    <Compile Include="Responses\FeedsResponse.cs" />
+    <Compile Include="Responses\FeedsUnreadCountResponse.cs" />
+    <Compile Include="Results\FeedUnreadCountSummaryResult.cs" />
+    <Compile Include="Responses\LoginResponse.cs" />
+    <Compile Include="Responses\MarkStoryAsUnreadResponse.cs" />
+    <Compile Include="Results\MarkStoryAsReadResult.cs" />
+    <Compile Include="Results\MarkStoryAsUnreadResult.cs" />
     <Compile Include="NewsBlurClient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SignupResponse.cs" />
-    <Compile Include="SignupResult.cs" />
-    <Compile Include="StoriesResponse.cs" />
-    <Compile Include="StorySummaryResult.cs" />
+    <Compile Include="Responses\SignupResponse.cs" />
+    <Compile Include="Results\SignupResult.cs" />
+    <Compile Include="Responses\StoriesResponse.cs" />
+    <Compile Include="Results\StorySummaryResult.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Threading.Tasks">
