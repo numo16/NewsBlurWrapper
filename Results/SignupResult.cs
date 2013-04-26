@@ -1,4 +1,6 @@
-﻿namespace Ayls.NewsBlur.Results
+﻿using System.Collections.Generic;
+
+namespace Ayls.NewsBlur.Results
 {
     public class SignupResult : ApiCallResult
     {
@@ -11,6 +13,11 @@
         }
 
         public SignupResult(string error, ApiCallStatus status) : base (error, status)
+        {
+        }
+
+        public SignupResult(IEnumerable<string> errors, ApiCallStatus status)
+            : base(errors, status)
         {
         }
     }

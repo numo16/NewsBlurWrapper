@@ -17,5 +17,12 @@ namespace Ayls.NewsBlur.Results
             Errors.Add(error);
             Status = status;
         }
+
+        protected ApiCallResult(IEnumerable<string> errors, ApiCallStatus status)
+            : this()
+        {
+            Errors.AddRange(errors);
+            Status = status;
+        }
     }
 }

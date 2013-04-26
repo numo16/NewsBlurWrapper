@@ -49,11 +49,18 @@ namespace Ayls.NewsBlur
                 if (response.IsSuccessStatusCode)
                 {
                     var loginResponse = JsonConvert.DeserializeObject<LoginResponse>(await response.Content.ReadAsStringAsync());
-                    result = new LoginResult(loginResponse.IsAuthenticated);
+                    if (loginResponse.IsAuthenticated)
+                    {
+                        result = new LoginResult(loginResponse.IsAuthenticated);
+                    }
+                    else
+                    {
+                        result = new LoginResult("Failed to authenticate.", ApiCallStatus.Failed);
+                    }
                 }
                 else
                 {
-                    result = new LoginResult(string.Format("Server returned {0}", response.StatusCode), ApiCallStatus.Failed);
+                    result = new LoginResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.Failed);
                 }
             }
             catch (Exception e)
@@ -91,22 +98,25 @@ namespace Ayls.NewsBlur
                     result = new SignupResult(signupResponse.IsAuthenticated);
                     if (!signupResponse.IsAuthenticated)
                     {
+                        var errorList = new List<string>();
                         if (signupResponse.Errors is JObject)
                         {
-                            foreach (var errorToken in signupResponse.Errors)
+                            var errors = JsonConvert.DeserializeObject<Dictionary<string, JToken>>(signupResponse.Errors.ToString());
+                            foreach (var msg in errors.Values)
                             {
-                                result.Errors.AddRange(JsonConvert.DeserializeObject<string[]>(errorToken.ToString()));
+                                errorList.AddRange(JsonConvert.DeserializeObject<string[]>(msg.ToString()));
                             }                      
                         }
                         else if (signupResponse.Errors != null)
                         {
-                            result.Errors.Add(JsonConvert.DeserializeObject<string>(signupResponse.Errors.ToString()));
+                            errorList.Add(JsonConvert.DeserializeObject<string>(signupResponse.Errors.ToString()));
                         }
+                        result = new SignupResult(errorList, ApiCallStatus.Failed);
                     }
                 }
                 else
                 {
-                    result = new SignupResult(string.Format("Server returned {0}", response.StatusCode), ApiCallStatus.Failed);
+                    result = new SignupResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.Failed);
                 }
             }
             catch (Exception e)
@@ -132,7 +142,7 @@ namespace Ayls.NewsBlur
                 }
                 else
                 {
-                    result = new LogoutResult(string.Format("Server returned {0}", response.StatusCode), ApiCallStatus.Failed);
+                    result = new LogoutResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.Failed);
                 }
             }
             catch (Exception e)
@@ -275,7 +285,7 @@ namespace Ayls.NewsBlur
                 }
                 else
                 {
-                    result = new AddFeedResult(string.Format("Server returned {0}", response.StatusCode), ApiCallStatus.Failed);
+                    result = new AddFeedResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.Failed);
                 }
             }
             catch (Exception e)
@@ -334,7 +344,7 @@ namespace Ayls.NewsBlur
                 }
                 else
                 {
-                    result = new MarkStoryAsReadResult(string.Format("Server returned {0}", response.StatusCode), ApiCallStatus.Failed);
+                    result = new MarkStoryAsReadResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.Failed);
                 }
             }
             catch (Exception e)
@@ -378,7 +388,7 @@ namespace Ayls.NewsBlur
                 }
                 else
                 {
-                    result = new MarkStoryAsUnreadResult(string.Format("Server returned {0}", response.StatusCode), ApiCallStatus.Failed);
+                    result = new MarkStoryAsUnreadResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.Failed);
                 }
             }
             catch (Exception e)
