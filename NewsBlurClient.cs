@@ -277,10 +277,13 @@ namespace Ayls.NewsBlur
                 {
                     var addFeedResponse = JsonConvert.DeserializeObject<AddFeedResponse>(await response.Content.ReadAsStringAsync());
                     result = new AddFeedResult(addFeedResponse.Feed, addFeedResponse.IsFeedAdded);
-                    result.Feed.Group = folder;
                     if (!result.IsFeedAdded)
                     {
                         result.Errors.Add(addFeedResponse.Error);
+                    }
+                    else
+                    {
+                        result.Feed.Group = folder;
                     }
                 }
                 else
