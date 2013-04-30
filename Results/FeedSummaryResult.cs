@@ -1,21 +1,21 @@
-﻿using Newtonsoft.Json;
+﻿using Ayls.NewsBlur.Responses;
 
 namespace Ayls.NewsBlur.Results
 {
     public class FeedSummaryResult
     {
-        [JsonProperty("id")]
+        internal FeedSummaryResult(FeedSummaryResponse response)
+        {
+            Id = response.Id;
+            Active = response.Active;
+            Link = response.Link;
+            Title = response.Title;
+        }
+
         public string Id { get; set; }
-
-        [JsonProperty("active")]
         public bool Active { get; set; }
-
-        [JsonProperty("feed_link")]
         public string Link { get; set; }
-
-        [JsonProperty("feed_title")]
         public string Title { get; set; }
-
         public string Group { get; set; }
     }
 }

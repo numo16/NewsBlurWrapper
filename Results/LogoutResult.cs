@@ -2,12 +2,13 @@
 {
     public class LogoutResult : ApiCallResult
     {
-        public LogoutResult()
+        internal LogoutResult()
         {
             Status = ApiCallStatus.Ok;
         }
 
-        public LogoutResult(string error, ApiCallStatus status) : base (error, status)
+        internal LogoutResult(string error, ApiCallStatus status)
+            : base(error, status)
         {
         }
     }

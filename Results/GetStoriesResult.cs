@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using Ayls.NewsBlur.Responses;
 
 namespace Ayls.NewsBlur.Results
 {
@@ -6,13 +8,13 @@ namespace Ayls.NewsBlur.Results
     {
         public IEnumerable<StorySummaryResult> Stories { get; private set; }
 
-        public GetStoriesResult(IEnumerable<StorySummaryResult> feeds)
+        internal GetStoriesResult(IEnumerable<StorySummaryResponse> stories)
         {
-            Stories = feeds;
+            Stories = stories.Select(x => new StorySummaryResult(x));
             Status = ApiCallStatus.Ok;
         }
 
-        public GetStoriesResult(string error, ApiCallStatus status)
+        internal GetStoriesResult(string error, ApiCallStatus status)
             : base(error, status)
         {
         }

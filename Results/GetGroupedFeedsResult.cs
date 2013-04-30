@@ -6,13 +6,14 @@ namespace Ayls.NewsBlur.Results
     {
         public IEnumerable<FeedSummaryResult> Feeds { get; private set; }
 
-        public GetGroupedFeedsResult(IEnumerable<FeedSummaryResult> feeds)
+        internal GetGroupedFeedsResult(IEnumerable<FeedSummaryResult> feeds)
         {
             Feeds = feeds;
             Status = ApiCallStatus.Ok;
         }
 
-        public GetGroupedFeedsResult(string error, ApiCallStatus status) : base(error, status)
+        internal GetGroupedFeedsResult(string error, ApiCallStatus status)
+            : base(error, status)
         {
         }
     }

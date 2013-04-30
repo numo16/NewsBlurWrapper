@@ -1,13 +1,16 @@
-﻿using Newtonsoft.Json;
+﻿using Ayls.NewsBlur.Responses;
 
 namespace Ayls.NewsBlur.Results
 {
     public class FeedUnreadCountSummaryResult
     {
-        [JsonProperty("id")]
-        public string Id { get; set; }
+        internal FeedUnreadCountSummaryResult(FeedUnreadCountSummaryResponse response)
+        {
+            Id = response.Id;
+            UnreadCount = response.UnreadCount;
+        }
 
-        [JsonProperty("nt")]
+        public string Id { get; set; }
         public int UnreadCount { get; set; }
     }
 }

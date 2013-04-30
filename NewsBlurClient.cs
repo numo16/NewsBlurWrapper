@@ -168,10 +168,10 @@ namespace Ayls.NewsBlur
                 var feedSummaryResults = new Collection<FeedSummaryResult>();
                 foreach (var feedToken in feedResponse.Feeds)
                 {
-                    var feedSummaryResult = JsonConvert.DeserializeObject<FeedSummaryResult>(feedToken.Value.ToString());
-                    if (feedSummaryResult.Active)
+                    var feedSummaryResponse = JsonConvert.DeserializeObject<FeedSummaryResponse>(feedToken.Value.ToString());
+                    if (feedSummaryResponse.Active)
                     {
-                        feedSummaryResults.Add(feedSummaryResult);
+                        feedSummaryResults.Add(new FeedSummaryResult(feedSummaryResponse));
                     }
                 }
 
@@ -233,8 +233,8 @@ namespace Ayls.NewsBlur
                 var feedUnreadCountSummaryResults = new Collection<FeedUnreadCountSummaryResult>();
                 foreach (var feedToken in feedsUnreadCountResponse.Feeds)
                 {
-                    var feedUnreadCountSummaryResult = JsonConvert.DeserializeObject<FeedUnreadCountSummaryResult>(feedToken.Value.ToString());
-                    feedUnreadCountSummaryResults.Add(feedUnreadCountSummaryResult);
+                    var unreadCountSummaryResponse = JsonConvert.DeserializeObject<FeedUnreadCountSummaryResponse>(feedToken.Value.ToString());
+                    feedUnreadCountSummaryResults.Add(new FeedUnreadCountSummaryResult(unreadCountSummaryResponse));
                 }
 
                 result = new GetFeedsUnreadCountResult(feedUnreadCountSummaryResults);

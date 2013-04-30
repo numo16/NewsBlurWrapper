@@ -2,12 +2,12 @@
 {
     public class MarkStoryAsReadResult : ApiCallResult
     {
-        public MarkStoryAsReadResult()
+        internal MarkStoryAsReadResult()
         {
             Status = ApiCallStatus.Ok;
         }
 
-        public MarkStoryAsReadResult(string error, ApiCallStatus status)
+        internal MarkStoryAsReadResult(string error, ApiCallStatus status)
             : base(error, status)
         {
         }

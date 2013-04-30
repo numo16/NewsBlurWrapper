@@ -1,23 +1,23 @@
 ﻿using System;
-using Newtonsoft.Json;
+using Ayls.NewsBlur.Responses;
 
 namespace Ayls.NewsBlur.Results
 {
     public class StorySummaryResult
     {
-        [JsonProperty("id")]
+        internal StorySummaryResult(StorySummaryResponse response)
+        {
+            Id = response.Id;
+            Link = response.Link;
+            Title = response.Title;
+            IsRead = response.IsRead;
+            Timestamp = response.Timestamp;
+        }
+
         public string Id { get; set; }
-
-        [JsonProperty("story_permalink")]
         public string Link { get; set; }
-
-        [JsonProperty("story_title")]
         public string Title { get; set; }
-
-        [JsonProperty("read_status")]
         public bool IsRead { get; set; }
-
-        [JsonProperty("story_date")]
         public DateTime Timestamp { get; set; }
     }
 }

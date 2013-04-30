@@ -6,17 +6,18 @@ namespace Ayls.NewsBlur.Results
     {
         public bool IsAuthenticated { get; set; }
 
-        public SignupResult(bool isAuthenticated)
+        internal SignupResult(bool isAuthenticated)
         {
             IsAuthenticated = isAuthenticated;
             Status = ApiCallStatus.Ok;
         }
 
-        public SignupResult(string error, ApiCallStatus status) : base (error, status)
+        internal SignupResult(string error, ApiCallStatus status)
+            : base(error, status)
         {
         }
 
-        public SignupResult(IEnumerable<string> errors, ApiCallStatus status)
+        internal SignupResult(IEnumerable<string> errors, ApiCallStatus status)
             : base(errors, status)
         {
         }

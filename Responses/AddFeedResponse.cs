@@ -1,5 +1,4 @@
-﻿using Ayls.NewsBlur.Results;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
 namespace Ayls.NewsBlur.Responses
 {
@@ -9,7 +8,7 @@ namespace Ayls.NewsBlur.Responses
         public int Code { get; set; }
 
         [JsonProperty("feed")]
-        public FeedSummaryResult Feed { get; set; }
+        public FeedSummaryResponse Feed { get; set; }
 
         [JsonProperty("message")]
         public string Error { get; set; }

@@ -6,13 +6,13 @@ namespace Ayls.NewsBlur.Results
     {
         public IEnumerable<FeedUnreadCountSummaryResult> Feeds { get; private set; }
 
-        public GetFeedsUnreadCountResult(IEnumerable<FeedUnreadCountSummaryResult> feeds)
+        internal GetFeedsUnreadCountResult(IEnumerable<FeedUnreadCountSummaryResult> feeds)
         {
             Feeds = feeds;
             Status = ApiCallStatus.Ok;
         }
 
-        public GetFeedsUnreadCountResult(string error, ApiCallStatus status)
+        internal GetFeedsUnreadCountResult(string error, ApiCallStatus status)
             : base(error, status)
         {
         }
