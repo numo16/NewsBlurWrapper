@@ -35,6 +35,7 @@
   <ItemGroup>
     <Compile Include="Responses\FeedSummaryResponse.cs" />
     <Compile Include="Responses\FeedUnreadCountSummaryResponse.cs" />
+    <Compile Include="Responses\StorySummaryIntelligenceResponse.cs" />
     <Compile Include="Responses\StorySummaryResponse.cs" />
     <Compile Include="Results\GetFeedsUnreadCountResult.cs" />
     <Compile Include="Results\GetGroupedFeedsResult.cs" />

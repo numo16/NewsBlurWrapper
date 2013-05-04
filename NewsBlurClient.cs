@@ -29,13 +29,10 @@ namespace Ayls.NewsBlur
         {
             LoginResult result; 
 
-            _username = username;
-            _password = password;
-
             var content = new FormUrlEncodedContent(new Collection<KeyValuePair<string, string>>()
                 {
-                    new KeyValuePair<string, string>("username", _username), 
-                    new KeyValuePair<string, string>("password", _password)
+                    new KeyValuePair<string, string>("username", username), 
+                    new KeyValuePair<string, string>("password", password)
                 });
 
             var request = new HttpRequestMessage(HttpMethod.Post, BaseUrl + "/api/login")
@@ -51,6 +48,8 @@ namespace Ayls.NewsBlur
                     var loginResponse = JsonConvert.DeserializeObject<LoginResponse>(await response.Content.ReadAsStringAsync());
                     if (loginResponse.IsAuthenticated)
                     {
+                        _username = username;
+                        _password = password;
                         result = new LoginResult(loginResponse.IsAuthenticated);
                     }
                     else
@@ -75,13 +74,10 @@ namespace Ayls.NewsBlur
         {
             SignupResult result;
 
-            _username = username;
-            _password = password;
-
             var content = new FormUrlEncodedContent(new Collection<KeyValuePair<string, string>>()
                 {
-                    new KeyValuePair<string, string>("username", _username), 
-                    new KeyValuePair<string, string>("password", _password)
+                    new KeyValuePair<string, string>("username", username), 
+                    new KeyValuePair<string, string>("password", password)
                 });
 
             var request = new HttpRequestMessage(HttpMethod.Post, BaseUrl + "/api/signup")
@@ -112,6 +108,11 @@ namespace Ayls.NewsBlur
                             errorList.Add(JsonConvert.DeserializeObject<string>(signupResponse.Errors.ToString()));
                         }
                         result = new SignupResult(errorList, ApiCallStatus.Failed);
+                    }
+                    else
+                    {
+                        _username = username;
+                        _password = password;
                     }
                 }
                 else
@@ -166,12 +167,15 @@ namespace Ayls.NewsBlur
                 var feedResponse = converter.Deserialize<FeedsResponse>(new JsonTextReader(new StreamReader(response)));
 
                 var feedSummaryResults = new Collection<FeedSummaryResult>();
-                foreach (var feedToken in feedResponse.Feeds)
+                if (feedResponse.Feeds is JObject)
                 {
-                    var feedSummaryResponse = JsonConvert.DeserializeObject<FeedSummaryResponse>(feedToken.Value.ToString());
-                    if (feedSummaryResponse.Active)
+                    var feedSummaryResponse = JsonConvert.DeserializeObject<Dictionary<string, FeedSummaryResponse>>(feedResponse.Feeds.ToString());
+                    foreach (var feedSummary in feedSummaryResponse.Values)
                     {
-                        feedSummaryResults.Add(new FeedSummaryResult(feedSummaryResponse));
+                        if (feedSummary.Active)
+                        {
+                            feedSummaryResults.Add(new FeedSummaryResult(feedSummary));
+                        }
                     }
                 }
 

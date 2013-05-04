@@ -10,6 +10,6 @@ namespace Ayls.NewsBlur.Responses
         public IEnumerable<JToken> Groups { get; set; }
 
         [JsonProperty("feeds")]
-        public JObject Feeds { get; set; }
+        public JToken Feeds { get; set; }
     }
 }

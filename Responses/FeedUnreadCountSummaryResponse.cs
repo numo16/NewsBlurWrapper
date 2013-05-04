@@ -9,5 +9,8 @@ namespace Ayls.NewsBlur.Responses
 
         [JsonProperty("nt")]
         public int UnreadCount { get; set; }
+
+        [JsonProperty("ps")]
+        public int InFocusCount { get; set; }
     }
 }

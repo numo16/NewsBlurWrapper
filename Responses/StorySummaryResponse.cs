@@ -19,5 +19,8 @@ namespace Ayls.NewsBlur.Responses
 
         [JsonProperty("story_date")]
         public DateTime Timestamp { get; set; }
+
+        [JsonProperty("intelligence")]
+        public StorySummaryIntelligenceResponse Intelligence { get; set; }
     }
 }
