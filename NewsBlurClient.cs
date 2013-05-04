@@ -354,6 +354,53 @@ namespace Ayls.NewsBlur
             return result;
         }
 
+        public async Task<MarkFeedAsReadResult> MarkFeedAsRead(string feedId)
+        {
+            MarkFeedAsReadResult result;
+
+            var values = new Collection<KeyValuePair<string, string>>()
+                {
+                    new KeyValuePair<string, string>("feed_id", feedId)
+                };
+
+            var content = new FormUrlEncodedContent(values);
+
+            var request = new HttpRequestMessage(HttpMethod.Post, BaseUrl + "/reader/mark_feed_as_read")
+            {
+                Content = content
+            };
+
+            try
+            {
+                var response = await ApiMethodRunner<HttpResponseMessage>(async () => await Client.SendAsync(request),
+                    async () => await Login(_username, _password));
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var converter = new JsonSerializer();
+                    var markFeedAsReadResponse = converter.Deserialize<MarkFeedAsReadResponse>(new JsonTextReader(new StreamReader(await response.Content.ReadAsStreamAsync())));
+                    if (markFeedAsReadResponse.IsMarkedAsRead)
+                    {
+                        result = new MarkFeedAsReadResult();
+                    }
+                    else
+                    {
+                        result = new MarkFeedAsReadResult("Failed to mark feed as read.", ApiCallStatus.Failed);
+                    }
+                }
+                else
+                {
+                    result = new MarkFeedAsReadResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.CommunicationError);
+                }
+            }
+            catch (Exception e)
+            {
+                result = HandleException(e, (m, s) => new MarkFeedAsReadResult(m, s));
+            }
+
+            return result;
+        }
+
         public async Task<GetStoriesResult> GetStories(string feedId, int page)
         {
             GetStoriesResult result;
