@@ -302,6 +302,58 @@ namespace Ayls.NewsBlur
             return result;
         }
 
+        public async Task<DeleteFeedResult> DeleteFeed(string feedId, string folder)
+        {
+            DeleteFeedResult result;
+
+            var values = new Collection<KeyValuePair<string, string>>()
+                {
+                    new KeyValuePair<string, string>("feed_id", feedId)
+                };
+
+            if (!string.IsNullOrEmpty(folder))
+            {
+                values.Add(new KeyValuePair<string, string>("in_folder", folder));
+            }
+
+            var content = new FormUrlEncodedContent(values);
+
+            var request = new HttpRequestMessage(HttpMethod.Post, BaseUrl + "/reader/delete_feed")
+            {
+                Content = content
+            };
+
+            try
+            {
+                var response = await ApiMethodRunner<HttpResponseMessage>(async () => await Client.SendAsync(request),
+                    async () => await Login(_username, _password));
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var converter = new JsonSerializer();
+                    var deleteFeedResponse = converter.Deserialize<DeleteFeedResponse>(new JsonTextReader(new StreamReader(await response.Content.ReadAsStreamAsync())));
+                    if (deleteFeedResponse.IsDeleted)
+                    {
+                        result = new DeleteFeedResult();
+                    }
+                    else
+                    {
+                        result = new DeleteFeedResult("Failed to delete feed.", ApiCallStatus.Failed);
+                    }
+                }
+                else
+                {
+                    result = new DeleteFeedResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.CommunicationError);
+                }
+            }
+            catch (Exception e)
+            {
+                result = HandleException(e, (m, s) => new DeleteFeedResult(m, s));
+            }
+
+            return result;
+        }
+
         public async Task<GetStoriesResult> GetStories(string feedId, int page)
         {
             GetStoriesResult result;
