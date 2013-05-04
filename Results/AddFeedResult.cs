@@ -5,12 +5,11 @@ namespace Ayls.NewsBlur.Results
     public class AddFeedResult : ApiCallResult
     {
         public FeedSummaryResult Feed { get; private set; }
-        public bool IsFeedAdded { get; private set; }
 
-        internal AddFeedResult(FeedSummaryResponse feed, bool isFeedAdded)
+        internal AddFeedResult(FeedSummaryResponse feed, string folder)
         {
             Feed = new FeedSummaryResult(feed);
-            IsFeedAdded = isFeedAdded;
+            Feed.Group = folder;
             Status = ApiCallStatus.Ok;
         }
 

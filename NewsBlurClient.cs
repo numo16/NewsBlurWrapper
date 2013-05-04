@@ -59,7 +59,7 @@ namespace Ayls.NewsBlur
                 }
                 else
                 {
-                    result = new LoginResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.Failed);
+                    result = new LoginResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.CommunicationError);
                 }
             }
             catch (Exception e)
@@ -117,7 +117,7 @@ namespace Ayls.NewsBlur
                 }
                 else
                 {
-                    result = new SignupResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.Failed);
+                    result = new SignupResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.CommunicationError);
                 }
             }
             catch (Exception e)
@@ -143,7 +143,7 @@ namespace Ayls.NewsBlur
                 }
                 else
                 {
-                    result = new LogoutResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.Failed);
+                    result = new LogoutResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.CommunicationError);
                 }
             }
             catch (Exception e)
@@ -280,19 +280,18 @@ namespace Ayls.NewsBlur
                 if (response.IsSuccessStatusCode)
                 {
                     var addFeedResponse = JsonConvert.DeserializeObject<AddFeedResponse>(await response.Content.ReadAsStringAsync());
-                    result = new AddFeedResult(addFeedResponse.Feed, addFeedResponse.IsFeedAdded);
-                    if (!result.IsFeedAdded)
+                    if (addFeedResponse.IsFeedAdded)
                     {
-                        result.Errors.Add(addFeedResponse.Error);
+                        result = new AddFeedResult(addFeedResponse.Feed, folder);
                     }
                     else
                     {
-                        result.Feed.Group = folder;
+                        result = new AddFeedResult(addFeedResponse.Error, ApiCallStatus.Failed);
                     }
                 }
                 else
                 {
-                    result = new AddFeedResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.Failed);
+                    result = new AddFeedResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.CommunicationError);
                 }
             }
             catch (Exception e)
@@ -347,11 +346,20 @@ namespace Ayls.NewsBlur
 
                 if (response.IsSuccessStatusCode)
                 {
-                    result = new MarkStoryAsReadResult();
+                    var converter = new JsonSerializer();
+                    var markStoryAsReadResponse = converter.Deserialize<MarkStoryAsReadResponse>(new JsonTextReader(new StreamReader(await response.Content.ReadAsStreamAsync())));
+                    if (markStoryAsReadResponse.IsMarkedAsRead)
+                    {
+                        result = new MarkStoryAsReadResult();
+                    }
+                    else
+                    {
+                        result = new MarkStoryAsReadResult(markStoryAsReadResponse.Errors, ApiCallStatus.Failed);           
+                    }
                 }
                 else
                 {
-                    result = new MarkStoryAsReadResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.Failed);
+                    result = new MarkStoryAsReadResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.CommunicationError);
                 }
             }
             catch (Exception e)
@@ -385,17 +393,19 @@ namespace Ayls.NewsBlur
                 if (response.IsSuccessStatusCode)
                 {
                     var converter = new JsonSerializer();
-                    var addFeedResponse = converter.Deserialize<MarkStoryAsUnreadResponse>(new JsonTextReader(new StreamReader(await response.Content.ReadAsStreamAsync())));
-
-                    result = new MarkStoryAsUnreadResult(addFeedResponse.IsMarkedAsUnread);
-                    if (!addFeedResponse.IsMarkedAsUnread)
+                    var markStoryAsUnreadResponse = converter.Deserialize<MarkStoryAsUnreadResponse>(new JsonTextReader(new StreamReader(await response.Content.ReadAsStreamAsync())));
+                    if (markStoryAsUnreadResponse.IsMarkedAsUnread)
                     {
-                        result.Errors.Add(addFeedResponse.Error);
+                        result = new MarkStoryAsUnreadResult();
+                    }
+                    else
+                    {
+                        result = new MarkStoryAsUnreadResult(markStoryAsUnreadResponse.Error, ApiCallStatus.Failed);
                     }
                 }
                 else
                 {
-                    result = new MarkStoryAsUnreadResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.Failed);
+                    result = new MarkStoryAsUnreadResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.CommunicationError);
                 }
             }
             catch (Exception e)

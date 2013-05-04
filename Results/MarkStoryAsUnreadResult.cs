@@ -2,11 +2,8 @@
 {
     public class MarkStoryAsUnreadResult : ApiCallResult
     {
-        public bool IsMarkedAsUnread { get; private set; }
-
-        internal MarkStoryAsUnreadResult(bool isMarkedAsUnread)
+        internal MarkStoryAsUnreadResult()
         {
-            IsMarkedAsUnread = isMarkedAsUnread;
             Status = ApiCallStatus.Ok;
         }
 
