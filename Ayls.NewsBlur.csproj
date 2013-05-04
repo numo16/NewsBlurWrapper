@@ -33,6 +33,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Responses\MarkStoryAsStarredResponse.cs" />
     <Compile Include="Responses\FeedSummaryResponse.cs" />
     <Compile Include="Responses\FeedUnreadCountSummaryResponse.cs" />
     <Compile Include="Responses\MarkStoryAsReadResponse.cs" />
@@ -55,6 +56,7 @@
     <Compile Include="Responses\LoginResponse.cs" />
     <Compile Include="Responses\MarkStoryAsUnreadResponse.cs" />
     <Compile Include="Results\MarkStoryAsReadResult.cs" />
+    <Compile Include="Results\MarkStoryAsStarredResult.cs" />
     <Compile Include="Results\MarkStoryAsUnreadResult.cs" />
     <Compile Include="NewsBlurClient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

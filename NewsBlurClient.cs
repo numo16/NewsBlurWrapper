@@ -415,5 +415,51 @@ namespace Ayls.NewsBlur
 
             return result;
         }
+
+        public async Task<MarkStoryAsStarredResult> MarkStoryAsStarred(string feedId, string storyId)
+        {
+            MarkStoryAsStarredResult result;
+
+            var content = new FormUrlEncodedContent(new Collection<KeyValuePair<string, string>>()
+                {
+                    new KeyValuePair<string, string>("story_id", storyId), 
+                    new KeyValuePair<string, string>("feed_id", feedId)
+                });
+
+            var request = new HttpRequestMessage(HttpMethod.Post, BaseUrl + "/reader/mark_story_as_starred")
+            {
+                Content = content
+            };
+
+            try
+            {
+                var response = await ApiMethodRunner<HttpResponseMessage>(async () => await Client.SendAsync(request),
+                    async () => await Login(_username, _password));
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var converter = new JsonSerializer();
+                    var markStoryAsStarredResponse = converter.Deserialize<MarkStoryAsStarredResponse>(new JsonTextReader(new StreamReader(await response.Content.ReadAsStreamAsync())));
+                    if (markStoryAsStarredResponse.IsMarkedAsStarred)
+                    {
+                        result = new MarkStoryAsStarredResult();
+                    }
+                    else
+                    {
+                        result = new MarkStoryAsStarredResult("Failed to mark story as starred.", ApiCallStatus.Failed);
+                    }
+                }
+                else
+                {
+                    result = new MarkStoryAsStarredResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.CommunicationError);
+                }
+            }
+            catch (Exception e)
+            {
+                result = HandleException(e, (m, s) => new MarkStoryAsStarredResult(m, s));
+            }
+
+            return result;
+        }
     }
 }
