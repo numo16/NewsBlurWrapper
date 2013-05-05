@@ -423,6 +423,28 @@ namespace Ayls.NewsBlur
             return result;
         }
 
+        public async Task<GetStoriesResult> GetUnreadStories(int page)
+        {
+            GetStoriesResult result;
+
+            try
+            {
+                var response = await ApiMethodRunner<Stream>(async () => await Client.GetStreamAsync(BaseUrl + "/reader/river_stories?read_filter=unread&page=" + page),
+                    async () => await Login(_username, _password));
+
+                var converter = new JsonSerializer();
+                var storiesResponse = converter.Deserialize<StoriesResponse>(new JsonTextReader(new StreamReader(response)));
+
+                result = new GetStoriesResult(storiesResponse.Stories);
+            }
+            catch (Exception e)
+            {
+                result = HandleException(e, (m, s) => new GetStoriesResult(m, s));
+            }
+
+            return result;
+        }
+
         public async Task<MarkStoryAsReadResult> MarkStoryAsRead(string feedId, string storyId)
         {
             MarkStoryAsReadResult result;
