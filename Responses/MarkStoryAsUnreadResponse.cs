@@ -10,7 +10,7 @@ namespace Ayls.NewsBlur.Responses
         [JsonProperty("message")]
         public string Error { get; set; }
 
-        public bool IsMarkedAsUnread
+        public bool IsUnread
         {
             get { return Code == 0; }
         }

@@ -184,7 +184,7 @@ namespace Ayls.NewsBlur
                     ProcessGroups(feedSummaryResults, groupToken, 0, null);
                 }
 
-                result = new GetGroupedFeedsResult(feedSummaryResults);
+                result = new GetGroupedFeedsResult(feedResponse.StarredCount, feedSummaryResults);
             }
             catch (Exception e)
             {
@@ -445,6 +445,28 @@ namespace Ayls.NewsBlur
             return result;
         }
 
+        public async Task<GetStoriesResult> GetStarredStories(int page)
+        {
+            GetStoriesResult result;
+
+            try
+            {
+                var response = await ApiMethodRunner<Stream>(async () => await Client.GetStreamAsync(BaseUrl + "/reader/starred_stories?page=" + page),
+                    async () => await Login(_username, _password));
+
+                var converter = new JsonSerializer();
+                var storiesResponse = converter.Deserialize<StoriesResponse>(new JsonTextReader(new StreamReader(response)));
+
+                result = new GetStoriesResult(storiesResponse.Stories);
+            }
+            catch (Exception e)
+            {
+                result = HandleException(e, (m, s) => new GetStoriesResult(m, s));
+            }
+
+            return result;
+        }
+
         public async Task<MarkStoryAsReadResult> MarkStoryAsRead(string feedId, string storyId)
         {
             MarkStoryAsReadResult result;
@@ -469,7 +491,7 @@ namespace Ayls.NewsBlur
                 {
                     var converter = new JsonSerializer();
                     var markStoryAsReadResponse = converter.Deserialize<MarkStoryAsReadResponse>(new JsonTextReader(new StreamReader(await response.Content.ReadAsStreamAsync())));
-                    if (markStoryAsReadResponse.IsMarkedAsRead)
+                    if (markStoryAsReadResponse.IsRead)
                     {
                         result = new MarkStoryAsReadResult();
                     }
@@ -515,7 +537,7 @@ namespace Ayls.NewsBlur
                 {
                     var converter = new JsonSerializer();
                     var markStoryAsUnreadResponse = converter.Deserialize<MarkStoryAsUnreadResponse>(new JsonTextReader(new StreamReader(await response.Content.ReadAsStreamAsync())));
-                    if (markStoryAsUnreadResponse.IsMarkedAsUnread)
+                    if (markStoryAsUnreadResponse.IsUnread)
                     {
                         result = new MarkStoryAsUnreadResult();
                     }
@@ -561,13 +583,13 @@ namespace Ayls.NewsBlur
                 {
                     var converter = new JsonSerializer();
                     var markStoryAsStarredResponse = converter.Deserialize<MarkStoryAsStarredResponse>(new JsonTextReader(new StreamReader(await response.Content.ReadAsStreamAsync())));
-                    if (markStoryAsStarredResponse.IsMarkedAsStarred)
+                    if (markStoryAsStarredResponse.IsStarred)
                     {
                         result = new MarkStoryAsStarredResult();
                     }
                     else
                     {
-                        result = new MarkStoryAsStarredResult("Failed to mark story as starred.", ApiCallStatus.Failed);
+                        result = new MarkStoryAsStarredResult("Failed to star a story.", ApiCallStatus.Failed);
                     }
                 }
                 else
@@ -578,6 +600,52 @@ namespace Ayls.NewsBlur
             catch (Exception e)
             {
                 result = HandleException(e, (m, s) => new MarkStoryAsStarredResult(m, s));
+            }
+
+            return result;
+        }
+
+        public async Task<MarkStoryAsUnstarredResult> MarkStoryAsUnstarred(string feedId, string storyId)
+        {
+            MarkStoryAsUnstarredResult result;
+
+            var content = new FormUrlEncodedContent(new Collection<KeyValuePair<string, string>>()
+                {
+                    new KeyValuePair<string, string>("story_id", storyId), 
+                    new KeyValuePair<string, string>("feed_id", feedId)
+                });
+
+            var request = new HttpRequestMessage(HttpMethod.Post, BaseUrl + "/reader/mark_story_as_unstarred")
+            {
+                Content = content
+            };
+
+            try
+            {
+                var response = await ApiMethodRunner<HttpResponseMessage>(async () => await Client.SendAsync(request),
+                    async () => await Login(_username, _password));
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var converter = new JsonSerializer();
+                    var markStoryAsUnstarredResponse = converter.Deserialize<MarkStoryAsUnstarredResponse>(new JsonTextReader(new StreamReader(await response.Content.ReadAsStreamAsync())));
+                    if (markStoryAsUnstarredResponse.IsUnstarred)
+                    {
+                        result = new MarkStoryAsUnstarredResult();
+                    }
+                    else
+                    {
+                        result = new MarkStoryAsUnstarredResult("Failed to unstar a story.", ApiCallStatus.Failed);
+                    }
+                }
+                else
+                {
+                    result = new MarkStoryAsUnstarredResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.CommunicationError);
+                }
+            }
+            catch (Exception e)
+            {
+                result = HandleException(e, (m, s) => new MarkStoryAsUnstarredResult(m, s));
             }
 
             return result;

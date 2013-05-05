@@ -20,6 +20,12 @@ namespace Ayls.NewsBlur.Responses
         [JsonProperty("story_date")]
         public DateTime Timestamp { get; set; }
 
+        [JsonProperty("story_feed_id")]
+        public string FeedId { get; set; }
+
+        [JsonProperty("starred")]
+        public bool IsStarred { get; set; }
+
         [JsonProperty("intelligence")]
         public StorySummaryIntelligenceResponse Intelligence { get; set; }
     }

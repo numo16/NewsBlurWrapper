@@ -11,7 +11,7 @@ namespace Ayls.NewsBlur.Responses
         [JsonProperty("errors")]
         public IEnumerable<string> Errors { get; set; }
 
-        public bool IsMarkedAsRead
+        public bool IsRead
         {
             get { return Code == 0; }
         }

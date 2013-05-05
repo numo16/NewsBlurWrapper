@@ -4,10 +4,13 @@ namespace Ayls.NewsBlur.Results
 {
     public class GetGroupedFeedsResult : ApiCallResult
     {
+        public int StarredCount { get; set; }
+
         public IEnumerable<FeedSummaryResult> Feeds { get; private set; }
 
-        internal GetGroupedFeedsResult(IEnumerable<FeedSummaryResult> feeds)
+        internal GetGroupedFeedsResult(int starredCount, IEnumerable<FeedSummaryResult> feeds)
         {
+            StarredCount = starredCount;
             Feeds = feeds;
             Status = ApiCallStatus.Ok;
         }

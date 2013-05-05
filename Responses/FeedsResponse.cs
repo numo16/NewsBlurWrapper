@@ -6,6 +6,9 @@ namespace Ayls.NewsBlur.Responses
 {
     class FeedsResponse
     {
+        [JsonProperty("starred_count")]
+        public int StarredCount { get; set; }
+
         [JsonProperty("folders")]
         public IEnumerable<JToken> Groups { get; set; }
 

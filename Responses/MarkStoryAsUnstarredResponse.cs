@@ -2,12 +2,12 @@
 
 namespace Ayls.NewsBlur.Responses
 {
-    class MarkStoryAsStarredResponse
+    class MarkStoryAsUnstarredResponse
     {
         [JsonProperty("code")]
         public int Code { get; set; }
 
-        public bool IsStarred
+        public bool IsUnstarred
         {
             get { return Code == 1; }
         }
