@@ -407,7 +407,7 @@ namespace Ayls.NewsBlur
 
             try
             {
-                var response = await ApiMethodRunner<Stream>(async () => await Client.GetStreamAsync(BaseUrl + "/reader/feed/" + feedId + "?include_story_content=false&page=" + page),
+                var response = await ApiMethodRunner<Stream>(async () => await Client.GetStreamAsync(BaseUrl + "/reader/feed/" + feedId + "?page=" + page),
                     async () => await Login(_username, _password));
 
                 var converter = new JsonSerializer();

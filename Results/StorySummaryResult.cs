@@ -18,6 +18,7 @@ namespace Ayls.NewsBlur.Results
                          response.Intelligence.TitleCount > 0);
             FeedId = response.FeedId;
             IsStarred = response.IsStarred;
+            Content = response.Content;
             Timestamp = response.Timestamp;
         }
 
@@ -28,6 +29,7 @@ namespace Ayls.NewsBlur.Results
         public bool IsInFocus { get; set; }
         public string FeedId { get; set; }
         public bool IsStarred { get; set; }
+        public string Content { get; set; }
         public DateTime Timestamp { get; set; }
     }
 }

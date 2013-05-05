@@ -26,6 +26,9 @@ namespace Ayls.NewsBlur.Responses
         [JsonProperty("starred")]
         public bool IsStarred { get; set; }
 
+        [JsonProperty("story_content")]
+        public string Content { get; set; }
+
         [JsonProperty("intelligence")]
         public StorySummaryIntelligenceResponse Intelligence { get; set; }
     }
