@@ -160,31 +160,36 @@ namespace Ayls.NewsBlur
 
             try
             {
-                var response = await ApiMethodRunner<Stream>(async () => await Client.GetStreamAsync(BaseUrl + "/reader/feeds"),
+                var response = await ApiMethodRunner<HttpResponseMessage>(async () => await Client.GetAsync(BaseUrl + "/reader/feeds"),
                     async () => await Login(_username, _password));
 
-                var converter = new JsonSerializer();
-                var feedResponse = converter.Deserialize<FeedsResponse>(new JsonTextReader(new StreamReader(response)));
-
-                var feedSummaryResults = new Collection<FeedSummaryResult>();
-                if (feedResponse.Feeds is JObject)
+                if (response.IsSuccessStatusCode)
                 {
-                    var feedSummaryResponse = JsonConvert.DeserializeObject<Dictionary<string, FeedSummaryResponse>>(feedResponse.Feeds.ToString());
-                    foreach (var feedSummary in feedSummaryResponse.Values)
+                    var feedResponse = JsonConvert.DeserializeObject<FeedsResponse>(await response.Content.ReadAsStringAsync());
+                    var feedSummaryResults = new Collection<FeedSummaryResult>();
+                    if (feedResponse.Feeds is JObject)
                     {
-                        if (feedSummary.Active)
+                        var feedSummaryResponse = JsonConvert.DeserializeObject<Dictionary<string, FeedSummaryResponse>>(feedResponse.Feeds.ToString());
+                        foreach (var feedSummary in feedSummaryResponse.Values)
                         {
-                            feedSummaryResults.Add(new FeedSummaryResult(feedSummary));
+                            if (feedSummary.Active)
+                            {
+                                feedSummaryResults.Add(new FeedSummaryResult(feedSummary));
+                            }
                         }
                     }
-                }
 
-                foreach (var groupToken in feedResponse.Groups)
+                    foreach (var groupToken in feedResponse.Groups)
+                    {
+                        ProcessGroups(feedSummaryResults, groupToken, 0, null);
+                    }
+
+                    result = new GetGroupedFeedsResult(feedResponse.StarredCount, feedSummaryResults);
+                }
+                else
                 {
-                    ProcessGroups(feedSummaryResults, groupToken, 0, null);
+                    result = new GetGroupedFeedsResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.CommunicationError);
                 }
-
-                result = new GetGroupedFeedsResult(feedResponse.StarredCount, feedSummaryResults);
             }
             catch (Exception e)
             {
@@ -198,9 +203,7 @@ namespace Ayls.NewsBlur
         {
             if (groupToken is JObject)
             {
-                var groupTokenKeyValue =
-                    JsonConvert.DeserializeObject<Dictionary<string, JToken>>((groupToken.ToString())).First();
-
+                var groupTokenKeyValue = JsonConvert.DeserializeObject<Dictionary<string, JToken>>((groupToken.ToString())).First();
                 foreach (var subGroupToken in groupTokenKeyValue.Value)
                 {
                     var groupName = currentGroupName;
@@ -228,20 +231,26 @@ namespace Ayls.NewsBlur
 
             try
             {
-                var response = await ApiMethodRunner<Stream>(async () => await Client.GetStreamAsync(BaseUrl + "/reader/refresh_feeds"),
+                var response = await ApiMethodRunner<HttpResponseMessage>(async () => await Client.GetAsync(BaseUrl + "/reader/refresh_feeds"),
                     async () => await Login(_username, _password));
 
-                var converter = new JsonSerializer();
-                var feedsUnreadCountResponse = converter.Deserialize<FeedsUnreadCountResponse>(new JsonTextReader(new StreamReader(response)));
-
-                var feedUnreadCountSummaryResults = new Collection<FeedUnreadCountSummaryResult>();
-                foreach (var feedToken in feedsUnreadCountResponse.Feeds)
+                if (response.IsSuccessStatusCode)
                 {
-                    var unreadCountSummaryResponse = JsonConvert.DeserializeObject<FeedUnreadCountSummaryResponse>(feedToken.Value.ToString());
-                    feedUnreadCountSummaryResults.Add(new FeedUnreadCountSummaryResult(unreadCountSummaryResponse));
-                }
+                    var feedsUnreadCountResponse = JsonConvert.DeserializeObject<FeedsUnreadCountResponse>(await response.Content.ReadAsStringAsync());
+                    var feedUnreadCountSummaryResults = new Collection<FeedUnreadCountSummaryResult>();
+                    foreach (var feedToken in feedsUnreadCountResponse.Feeds)
+                    {
+                        var unreadCountSummaryResponse =
+                            JsonConvert.DeserializeObject<FeedUnreadCountSummaryResponse>(feedToken.Value.ToString());
+                        feedUnreadCountSummaryResults.Add(new FeedUnreadCountSummaryResult(unreadCountSummaryResponse));
+                    }
 
-                result = new GetFeedsUnreadCountResult(feedUnreadCountSummaryResults);
+                    result = new GetFeedsUnreadCountResult(feedUnreadCountSummaryResults);
+                }
+                else
+                {
+                    result = new GetFeedsUnreadCountResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.CommunicationError);
+                }
             }
             catch (Exception e)
             {
@@ -330,8 +339,7 @@ namespace Ayls.NewsBlur
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var converter = new JsonSerializer();
-                    var deleteFeedResponse = converter.Deserialize<DeleteFeedResponse>(new JsonTextReader(new StreamReader(await response.Content.ReadAsStreamAsync())));
+                    var deleteFeedResponse = JsonConvert.DeserializeObject<DeleteFeedResponse>(await response.Content.ReadAsStringAsync());
                     if (deleteFeedResponse.IsDeleted)
                     {
                         result = new DeleteFeedResult();
@@ -377,8 +385,7 @@ namespace Ayls.NewsBlur
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var converter = new JsonSerializer();
-                    var markFeedAsReadResponse = converter.Deserialize<MarkFeedAsReadResponse>(new JsonTextReader(new StreamReader(await response.Content.ReadAsStreamAsync())));
+                    var markFeedAsReadResponse = JsonConvert.DeserializeObject<MarkFeedAsReadResponse>(await response.Content.ReadAsStringAsync());
                     if (markFeedAsReadResponse.IsMarkedAsRead)
                     {
                         result = new MarkFeedAsReadResult();
@@ -407,13 +414,18 @@ namespace Ayls.NewsBlur
 
             try
             {
-                var response = await ApiMethodRunner<Stream>(async () => await Client.GetStreamAsync(BaseUrl + "/reader/feed/" + feedId + "?page=" + page),
+                var response = await ApiMethodRunner<HttpResponseMessage>(async () => await Client.GetAsync(BaseUrl + "/reader/feed/" + feedId + "?page=" + page),
                     async () => await Login(_username, _password));
 
-                var converter = new JsonSerializer();
-                var storiesResponse = converter.Deserialize<StoriesResponse>(new JsonTextReader(new StreamReader(response)));
-
-                result = new GetStoriesResult(storiesResponse.Stories);
+                if (response.IsSuccessStatusCode)
+                {
+                    var storiesResponse = JsonConvert.DeserializeObject<StoriesResponse>(await response.Content.ReadAsStringAsync());
+                    result = new GetStoriesResult(storiesResponse.Stories);
+                }
+                else
+                {
+                    result = new GetStoriesResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.CommunicationError);
+                }
             }
             catch (Exception e)
             {
@@ -429,13 +441,18 @@ namespace Ayls.NewsBlur
 
             try
             {
-                var response = await ApiMethodRunner<Stream>(async () => await Client.GetStreamAsync(BaseUrl + "/reader/river_stories?read_filter=unread&page=" + page),
+                var response = await ApiMethodRunner<HttpResponseMessage>(async () => await Client.GetAsync(BaseUrl + "/reader/river_stories?read_filter=unread&page=" + page),
                     async () => await Login(_username, _password));
 
-                var converter = new JsonSerializer();
-                var storiesResponse = converter.Deserialize<StoriesResponse>(new JsonTextReader(new StreamReader(response)));
-
-                result = new GetStoriesResult(storiesResponse.Stories);
+                if (response.IsSuccessStatusCode)
+                {
+                    var storiesResponse = JsonConvert.DeserializeObject<StoriesResponse>(await response.Content.ReadAsStringAsync());
+                    result = new GetStoriesResult(storiesResponse.Stories);
+                }
+                else
+                {
+                    result = new GetStoriesResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.CommunicationError);
+                }
             }
             catch (Exception e)
             {
@@ -451,13 +468,18 @@ namespace Ayls.NewsBlur
 
             try
             {
-                var response = await ApiMethodRunner<Stream>(async () => await Client.GetStreamAsync(BaseUrl + "/reader/starred_stories?page=" + page),
+                var response = await ApiMethodRunner<HttpResponseMessage>(async () => await Client.GetAsync(BaseUrl + "/reader/starred_stories?page=" + page),
                     async () => await Login(_username, _password));
 
-                var converter = new JsonSerializer();
-                var storiesResponse = converter.Deserialize<StoriesResponse>(new JsonTextReader(new StreamReader(response)));
-
-                result = new GetStoriesResult(storiesResponse.Stories);
+                if (response.IsSuccessStatusCode)
+                {
+                    var storiesResponse = JsonConvert.DeserializeObject<StoriesResponse>(await response.Content.ReadAsStringAsync());
+                    result = new GetStoriesResult(storiesResponse.Stories);
+                }
+                else
+                {
+                    result = new GetStoriesResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.CommunicationError);
+                }
             }
             catch (Exception e)
             {
@@ -489,8 +511,7 @@ namespace Ayls.NewsBlur
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var converter = new JsonSerializer();
-                    var markStoryAsReadResponse = converter.Deserialize<MarkStoryAsReadResponse>(new JsonTextReader(new StreamReader(await response.Content.ReadAsStreamAsync())));
+                    var markStoryAsReadResponse = JsonConvert.DeserializeObject<MarkStoryAsReadResponse>(await response.Content.ReadAsStringAsync());
                     if (markStoryAsReadResponse.IsRead)
                     {
                         result = new MarkStoryAsReadResult();
@@ -535,8 +556,7 @@ namespace Ayls.NewsBlur
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var converter = new JsonSerializer();
-                    var markStoryAsUnreadResponse = converter.Deserialize<MarkStoryAsUnreadResponse>(new JsonTextReader(new StreamReader(await response.Content.ReadAsStreamAsync())));
+                    var markStoryAsUnreadResponse = JsonConvert.DeserializeObject<MarkStoryAsUnreadResponse>(await response.Content.ReadAsStringAsync());
                     if (markStoryAsUnreadResponse.IsUnread)
                     {
                         result = new MarkStoryAsUnreadResult();
@@ -581,8 +601,7 @@ namespace Ayls.NewsBlur
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var converter = new JsonSerializer();
-                    var markStoryAsStarredResponse = converter.Deserialize<MarkStoryAsStarredResponse>(new JsonTextReader(new StreamReader(await response.Content.ReadAsStreamAsync())));
+                    var markStoryAsStarredResponse = JsonConvert.DeserializeObject<MarkStoryAsStarredResponse>(await response.Content.ReadAsStringAsync());
                     if (markStoryAsStarredResponse.IsStarred)
                     {
                         result = new MarkStoryAsStarredResult();
@@ -627,8 +646,7 @@ namespace Ayls.NewsBlur
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var converter = new JsonSerializer();
-                    var markStoryAsUnstarredResponse = converter.Deserialize<MarkStoryAsUnstarredResponse>(new JsonTextReader(new StreamReader(await response.Content.ReadAsStreamAsync())));
+                    var markStoryAsUnstarredResponse = JsonConvert.DeserializeObject<MarkStoryAsUnstarredResponse>(await response.Content.ReadAsStringAsync());
                     if (markStoryAsUnstarredResponse.IsUnstarred)
                     {
                         result = new MarkStoryAsUnstarredResult();
