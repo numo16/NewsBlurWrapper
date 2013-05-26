@@ -33,6 +33,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Responses\MarkAllFeedsAsReadResponse.cs" />
     <Compile Include="Responses\MarkStoryAsUnstarredResponse.cs" />
     <Compile Include="Responses\MarkFeedAsReadResponse.cs" />
     <Compile Include="Responses\DeleteFeedResponse.cs" />
@@ -42,6 +43,7 @@
     <Compile Include="Responses\MarkStoryAsReadResponse.cs" />
     <Compile Include="Responses\StorySummaryIntelligenceResponse.cs" />
     <Compile Include="Responses\StorySummaryResponse.cs" />
+    <Compile Include="Results\MarkAllFeedsAsReadResult.cs" />
     <Compile Include="Results\MarkStoryAsUnstarredResult.cs" />
     <Compile Include="Results\MarkFeedAsReadResult.cs" />
     <Compile Include="Results\DeleteFeedResult.cs" />

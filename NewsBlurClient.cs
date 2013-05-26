@@ -408,6 +408,41 @@ namespace Ayls.NewsBlur
             return result;
         }
 
+        public async Task<MarkAllFeedsAsReadResult> MarkAllFeedsAsRead()
+        {
+            MarkAllFeedsAsReadResult result;
+
+            var request = new HttpRequestMessage(HttpMethod.Post, BaseUrl + "/reader/mark_all_as_read");
+            try
+            {
+                var response = await ApiMethodRunner<HttpResponseMessage>(async () => await Client.SendAsync(request),
+                    async () => await Login(_username, _password));
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var markAllFeedsAsReadResponse = JsonConvert.DeserializeObject<MarkAllFeedsAsReadResponse>(await response.Content.ReadAsStringAsync());
+                    if (markAllFeedsAsReadResponse.AreMarkedAsRead)
+                    {
+                        result = new MarkAllFeedsAsReadResult();
+                    }
+                    else
+                    {
+                        result = new MarkAllFeedsAsReadResult("Failed to mark all feeds as read.", ApiCallStatus.Failed);
+                    }
+                }
+                else
+                {
+                    result = new MarkAllFeedsAsReadResult(string.Format("Server returned {0}.", response.StatusCode), ApiCallStatus.CommunicationError);
+                }
+            }
+            catch (Exception e)
+            {
+                result = HandleException(e, (m, s) => new MarkAllFeedsAsReadResult(m, s));
+            }
+
+            return result;
+        }
+
         public async Task<GetStoriesResult> GetStories(string feedId, int page)
         {
             GetStoriesResult result;
