@@ -9,6 +9,7 @@ namespace Ayls.NewsBlur
     public abstract class NewsBlurClientBase
     {
         protected abstract string BaseUrl { get; }
+        protected abstract string UserAgent { get; }
 
         private HttpClient _client;
         protected HttpClient Client
@@ -34,10 +35,14 @@ namespace Ayls.NewsBlur
                 UseDefaultCredentials = false
             };
 
-            return new HttpClient(handler)
+            var client = new HttpClient(handler)
             {
                 BaseAddress = new Uri(BaseUrl)
             };
+
+            client.DefaultRequestHeaders.Add("user-agent", UserAgent);
+
+            return client;
         }
 
         protected T HandleException<T>(Exception e, Func<string, ApiCallStatus, T> resultDelegate)

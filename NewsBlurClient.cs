@@ -14,6 +14,11 @@ namespace Ayls.NewsBlur
 {
     public class NewsBlurClient : NewsBlurClientBase
     {
+        public NewsBlurClient(string useragent)
+        {
+            _userAgent = useragent;
+        }
+
         protected override string BaseUrl
         {
             get
@@ -22,8 +27,14 @@ namespace Ayls.NewsBlur
             }
         }
 
+        protected override string UserAgent
+        {
+            get { return _userAgent; }
+        }
+
         private string _username;
         private string _password;
+        private string _userAgent;
 
         public async Task<LoginResult> Login(string username, string password)
         {
